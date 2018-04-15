@@ -132,7 +132,15 @@ My process was not at all scientific or well researched.  But it works, so it is
 
 # Install Kubernetes
 
-TODO: explain
+TODO
+
+# Install Cri-Tools
+
+TODO
+
+# Initialize Cluster
+
+TODO: explain the pod network
 
 Run the following as root on the master node.
 
@@ -229,14 +237,6 @@ This node has joined the cluster:
 
 Run 'kubectl get nodes' on the master to see this node join the cluster.
 ```
-
-# Install Cri-Tools
-
-TODO
-
-# Initialize Cluster
-
-TODO
 
 # Configure KubeCtl
 
