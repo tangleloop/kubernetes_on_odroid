@@ -50,7 +50,7 @@ Note: I have only tested with the Ubuntu server - LTS kernel, but the Debian ser
 *  [kubernetes.io: Installing kubeadm](https://kubernetes.io/docs/setup/independent/install-kubeadm/)
 *  [kubernetes.io: Using kubeadm to Create a Cluster](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)
 
-## Kuberenetes on ARM
+## Kubernetes on ARM
 
 *  [Setup Kubernetes on a Raspberry Pi Cluster easily the official way!](https://blog.hypriot.com/post/setup-kubernetes-raspberry-pi-cluster/)
 
@@ -58,7 +58,7 @@ Note: I have only tested with the Ubuntu server - LTS kernel, but the Debian ser
 
 # Hardware
 
-My configuration includes three units, so I ordered 3 of each:
+My configuration includes three nodes, so I ordered 3 of each:
 
 1. (3x) [ODROID-HC2](https://ameridroid.com/products/odroid-hc2) units.  Be sure to include power supplies and power plugs for your region.
 2. (3x) [Sandisk Ultra 32GB Micro SDHC UHS-I Card with Adapter - 98MB/s U1 A1 - SDSQUAR-032G-GN6MA](https://www.amazon.com/gp/product/B073JWXGNT/ref=oh_aui_detailpage_o06_s01?ie=UTF8&psc=1)
@@ -136,13 +136,46 @@ TODO
 
 # Install Cri-Tools
 
-TODO
+At the time of this writing with Kubernetes v1.10.0, cri-tools are not installed in the kubernetes repository and must be manually installed.
 
-# Initialize Cluster
+**Note: each version of Kubernetes requires a specific version of cri-tools**
+
+See the version matrix at [github.com: cri-tools](https://github.com/kubernetes-incubator/cri-tools) to determine which version you need.
+
+The binaries are available at [github.com: cri-tools release](https://github.com/kubernetes-incubator/cri-tools/releases)
+
+For v1.10.0 of kubernetes, you need v1.0.0-beta of cri-tools.  So for this specific version, the following commands will install the binaries.
+
+Run on each node as root:
+
+```sh
+$ wget https://github.com/kubernetes-incubator/cri-tools/releases/download/v1.0.0-beta.0/crictl-v1.0.0-beta.0-linux-arm.tar.gz
+$ tar -xvf crictl-v1.0.0-beta.0-linux-arm.tar.gz 
+$ mv crictl /usr/local/bin
+```
+
+**Note: not sure if critest is needed**
+
+Run on each node as root:
+
+
+```sh
+$ wget https://github.com/kubernetes-incubator/cri-tools/releases/download/v1.0.0-beta.0/critest-v1.0.0-beta.0-linux-arm.tar.gz
+$ tar -xvf critest-v1.0.0-beta.0-linux-arm.tar.gz 
+$ mv critest /usr/local/bin
+```
+
+# Initialize Cluster On Master Node
 
 TODO: explain the pod network
 
 Run the following as root on the master node.
+
+```sh
+$ kubeadm init --pod-network-cidr=10.244.0.0/16
+```
+
+## Example
 
 ```sh
 root@odroid01:~# kubeadm init --pod-network-cidr=10.244.0.0/16
@@ -205,9 +238,13 @@ as root:
   kubeadm join 192.168.1.31:6443 --token qy1257.dmdcz94zmi6a6gnj --discovery-token-ca-cert-hash sha256:b8939d6062571f9f6f4c1b3741a08ebcb9ce2ee0874fd7e2ab43741101b6d1d5
 ```
 
+# Add Other Nodes to Cluster
+
 Run the command shown at the end of the instructions on each of the remaining nodes.
 
-*Do not use the command line shown below.  Use the command line provided by your master node.*
+**Note: Do not use the command line shown below.  Use the command line provided by "kubeadm init" on your master node.**
+
+## Example
 
 ```sh
 root@odroid02:~# kubeadm join 192.168.1.31:6443 --token qy1257.dmdcz94zmi6a6gnj --discovery-token-ca-cert-hash sha256:b8939d6062571f9f6f4c1b3741a08ebcb9ce2ee0874fd7e2ab43741101b6d1d5
@@ -217,7 +254,7 @@ root@odroid02:~# kubeadm join 192.168.1.31:6443 --token qy1257.dmdcz94zmi6a6gnj 
 [preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`
 ```
 
-If you run into the same error that I do, you may need to ignore errors from cri-tools by appending "--ignore-preflight-errors=cri"
+**If you run into the same error that I do, you may need to ignore errors from cri-tools by appending "--ignore-preflight-errors=cri"**
 
 ```sh
 root@odroid02:~# kubeadm join 192.168.1.31:6443 --token qy1257.dmdcz94zmi6a6gnj --discovery-token-ca-cert-hash sha256:b8939d6062571f9f6f4c1b3741a08ebcb9ce2ee0874fd7e2ab43741101b6d1d5 --ignore-preflight-errors=cri
@@ -238,20 +275,35 @@ This node has joined the cluster:
 Run 'kubectl get nodes' on the master to see this node join the cluster.
 ```
 
-# Configure KubeCtl
+# Configure kubectl
 
-TODO
+kubectl does not need to run as root.
+
+Log in as a non-admin user on your master node and run the following:
+
+```sh
+$ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+$ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
 
 # Initialize Pod Network
 
-TODO
+For the flannel pod network, do the following where you have kubectl configured:
+
+```sh
+$ wget https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
+$ sed "s/amd64/arm/g" kube-flannel.yml > kube-flannel-arm.yml
+$ kubectl apply -f kube-flannel-arm.yml
+```
 
 # Remove Kubernetes (to try a different configuration)
 
-Note: this will destroy your currently running kubernetes cluster (and any pods which may be running)
+Note: this will **destroy** your currently running kubernetes cluster (and any pods which may be running)
 
 Run the following command as root on all nodes.
 
 ```sh
 kubectl reset
 ```
+
+Now you can Re-Initialize Cluster On Master Node
