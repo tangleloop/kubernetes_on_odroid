@@ -115,7 +115,16 @@ My process was not at all scientific or well researched.  But it works, so it is
 	sudo arp-scan --localnet
 	'''
 
-4.  Generate a unique machine-id for each node.
+4.  First login
+
+	Once you know the ip address from the previous step, use it to log in via ssh.
+
+	```sh
+	$ ssh root@xxx.xxx.xxx.xxx     (example: ssh root@192.168.1.31)
+        root@xxx.xxx.xxx.xxx password: (type the default armbian password here: 1234)
+	```
+
+5.  Generate a unique machine-id for each node.
 
 	On each node, log in as admin and run the following
 
@@ -126,13 +135,42 @@ My process was not at all scientific or well researched.  But it works, so it is
 
 	During the reboot, a new unique machine-id file will be created.
 
-5.  Get system updates. - TODO
+6.  Get system updates.
 
-6.  Setup /etc/hosts on each node - TODO
+On each node, run the following as root:
+
+```sh
+$ apt-get update
+$ apt-get upgrade
+```
+
+7.  Assign static IPs for each node.
+
+	Select unique static IP addresses appropriate for your local network.  Network configuration is unique to each network.
+
+	Option 1: armbian-config
+
+	Option 2: vi /etc/network/interfaces
+
+8.  Set the hostname for each node.
+
+	Use armbian-config to set hostname.  Each hostname should be unique.
+
+9.  Setup /etc/hosts on each node.
+
+	On each node, create an /etc/hosts file which lists all the nodes.
+
+	Append the following to /etc/hosts, substituting the ip addresses and host names for your network.
+	
+	```
+	192.168.1.31	odroid01
+	192.168.1.32	odroid02
+	192.168.1.33	odroid03
+	```
 
 # Install Kubernetes
 
-TODO
+Refer to [Installing kubeadm](https://kubernetes.io/docs/setup/independent/install-kubeadm/)
 
 # Install Cri-Tools
 
@@ -146,6 +184,10 @@ The binaries are available at [github.com: cri-tools release](https://github.com
 
 For v1.10.0 of kubernetes, you need v1.0.0-beta of cri-tools.  So for this specific version, the following commands will install the binaries.
 
+### Install crictl for Kubernetes v1.10.0
+
+**Each version of Kubernetes requires a specific version of crictl.  This example is for Kubernetes v1.10.0 only.**
+
 Run on each node as root:
 
 ```sh
@@ -154,10 +196,11 @@ $ tar -xvf crictl-v1.0.0-beta.0-linux-arm.tar.gz
 $ mv crictl /usr/local/bin
 ```
 
-**Note: not sure if critest is needed**
+### Install critest for Kubernetes v1.10.0
+
+**Each version of Kubernetes requires a specific version of critest.  This example is for Kubernetes v1.10.0 only.**
 
 Run on each node as root:
-
 
 ```sh
 $ wget https://github.com/kubernetes-incubator/cri-tools/releases/download/v1.0.0-beta.0/critest-v1.0.0-beta.0-linux-arm.tar.gz
@@ -240,9 +283,9 @@ as root:
 
 # Add Other Nodes to Cluster
 
-Run the command shown at the end of the instructions on each of the remaining nodes.
+1.  Run the command shown at the end of the instructions on each of the remaining nodes.
 
-**Note: Do not use the command line shown below.  Use the command line provided by "kubeadm init" on your master node.**
+**Note: the token and hash are specific to each individual Kubernetes cluster.  Do not copy the examples below.**
 
 ## Example
 
